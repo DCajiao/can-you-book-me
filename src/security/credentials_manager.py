@@ -15,19 +15,13 @@ class CredentialsManager:
             "API_KEY": os.getenv("API_KEY"),
             "PORT": os.getenv("PORT"),
             "LOGGER_LEVEL": os.getenv("LOGGER_LEVEL", "INFO"),
-            # SSH Tunnel
-            "SSH_HOST": os.getenv("SSH_HOST"),
-            "SSH_PORT": os.getenv("SSH_PORT", "22"),
-            "SSH_USER": os.getenv("SSH_USER"),
-            "SSH_PASS": os.getenv("SSH_PASS"),
-            # MySQL
-            "MYSQL_USER": os.getenv("MYSQL_USER"),
-            "MYSQL_PASS": os.getenv("MYSQL_PASS"),
-            "MYSQL_DB": os.getenv("MYSQL_DB"),
-            "WP_TABLE_PREFIX": os.getenv("WP_TABLE_PREFIX", "wp_"),
-            # GCP
-            "GCP_PROJECT": os.getenv("GCP_PROJECT"),
-            "GCP_SERVICE_ACCOUNT_JSON": os.getenv("GCP_SERVICE_ACCOUNT_JSON"),
+            # Google OAuth2 (Calendar)
+            "SECRET_KEY": os.getenv("SECRET_KEY"),
+            "GOOGLE_CLIENT_ID": os.getenv("GOOGLE_CLIENT_ID"),
+            "GOOGLE_CLIENT_SECRET": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "GOOGLE_REFRESH_TOKEN": os.getenv("GOOGLE_REFRESH_TOKEN"),
+            "GOOGLE_REDIRECT_URI": os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/admin/callback"),
+            "CALENDAR_IDS": os.getenv("CALENDAR_IDS", "primary"),
         }
 
         # Only validate core app variables (sync vars validated at runtime)
