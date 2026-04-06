@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Can You Book Me?</title>
+
+  <!-- FullCalendar 6 -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+  <!-- Tippy.js (tooltips) -->
+  <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+  <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo">📅 Can You Book Me?</span>
+    </div>
+    <div class="header-right">
+      <div class="tz-badge" id="tz-badge">
+        <span class="tz-label">Tu zona horaria:</span>
+        <span class="tz-value" id="user-tz">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="calendar-container">
+    <div id="calendar"></div>
+  </main>
+
+  <div id="event-modal" class="modal hidden">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-card">
+      <button class="modal-close" id="modal-close">&times;</button>
+      <div class="modal-header">
+        <span class="modal-dot" id="modal-dot"></span>
+        <h2 class="modal-title" id="modal-title"></h2>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row" id="modal-calendar-row">
+          <span class="modal-icon">🗓</span>
+          <span id="modal-calendar"></span>
+        </div>
+        <div class="modal-row" id="modal-time-row">
+          <span class="modal-icon">🕐</span>
+          <span id="modal-time"></span>
+        </div>
+        <div class="modal-row hidden" id="modal-tz-row">
+          <span class="modal-icon">🌍</span>
+          <span id="modal-tz"></span>
+        </div>
+        <div class="modal-row hidden" id="modal-location-row">
+          <span class="modal-icon">📍</span>
+          <span id="modal-location"></span>
+        </div>
+        <div class="modal-row hidden" id="modal-desc-row">
+          <span class="modal-icon">📝</span>
+          <span id="modal-desc"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
