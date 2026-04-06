@@ -1,3 +1,9 @@
+import base64
+import hashlib
+import json
+import secrets
+
+import requests as http_requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -9,6 +15,14 @@ from security.credentials_manager import CredentialsManager
 logger = get_logger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+
+def _generate_pkce_pair() -> tuple[str, str]:
+    """Returns (code_verifier, code_challenge) for PKCE OAuth2 flow."""
+    code_verifier = secrets.token_urlsafe(96)
+    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+    code_challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    return code_verifier, code_challenge
 
 
 class GoogleCalendarService:
@@ -31,29 +45,50 @@ class GoogleCalendarService:
             redirect_uri=self._creds["GOOGLE_REDIRECT_URI"],
         )
 
-    def get_auth_url(self) -> tuple[str, str | None]:
-        """Returns (auth_url, code_verifier). Save code_verifier in session."""
+    def get_auth_url(self) -> str:
+        """
+        Generates the OAuth2 authorization URL.
+        The code_verifier is embedded in the state parameter so it survives
+        the external redirect without relying on the Flask session.
+        """
+        code_verifier, code_challenge = _generate_pkce_pair()
+        # Embed code_verifier in state (base64-encoded JSON)
+        state_payload = base64.urlsafe_b64encode(
+            json.dumps({"cv": code_verifier}).encode()
+        ).decode()
+
         flow = self._build_flow()
         auth_url, _ = flow.authorization_url(
             access_type="offline",
-            include_granted_scopes="true",
             prompt="consent",
+            code_challenge=code_challenge,
+            code_challenge_method="S256",
+            state=state_payload,
         )
-        # requests-oauthlib stores the PKCE verifier on the session object
-        code_verifier = getattr(flow.oauth2session, "code_verifier", None)
-        return auth_url, code_verifier
+        return auth_url
 
-    def exchange_code(self, code: str, code_verifier: str | None = None) -> dict:
-        flow = self._build_flow()
-        flow.fetch_token(code=code, code_verifier=code_verifier)
-        token = flow.credentials
-        return {
-            "access_token": token.token,
-            "refresh_token": token.refresh_token,
-            "token_uri": token.token_uri,
-            "client_id": token.client_id,
-            "client_secret": token.client_secret,
-        }
+    def exchange_code(self, code: str, state: str) -> dict:
+        """
+        Exchanges the authorization code for tokens.
+        Recovers code_verifier from the state parameter returned by Google.
+        Uses requests directly to avoid library PKCE handling issues.
+        """
+        state_data = json.loads(base64.urlsafe_b64decode(state).decode())
+        code_verifier = state_data["cv"]
+
+        response = http_requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": self._creds["GOOGLE_CLIENT_ID"],
+                "client_secret": self._creds["GOOGLE_CLIENT_SECRET"],
+                "redirect_uri": self._creds["GOOGLE_REDIRECT_URI"],
+                "grant_type": "authorization_code",
+                "code_verifier": code_verifier,
+            },
+        )
+        response.raise_for_status()
+        return response.json()
 
     def get_credentials(self) -> Credentials:
         return Credentials(
@@ -78,9 +113,14 @@ class GoogleCalendarService:
         events = []
         for calendar_id in calendar_ids:
             try:
-                cal_meta = service.calendars().get(calendarId=calendar_id).execute()
+                # calendarList returns the user-facing color and name
+                cal_meta = service.calendarList().get(calendarId=calendar_id).execute()
                 calendar_name = cal_meta.get("summary", calendar_id)
-                calendar_color = cal_meta.get("backgroundColor", "#4285F4")
+                calendar_color = (
+                    cal_meta.get("backgroundColor")
+                    or cal_meta.get("foregroundColor")
+                    or "#4285F4"
+                )
 
                 result = (
                     service.events()
@@ -102,9 +142,14 @@ class GoogleCalendarService:
                     end_dt = end.get("dateTime") or end.get("date")
                     event_timezone = start.get("timeZone") or cal_meta.get("timeZone", "UTC")
 
+                    # Private/confidential events have no summary — show as "Busy"
+                    summary = item.get("summary")
+                    is_busy = not summary
+                    title = summary if summary else "Busy"
+
                     events.append({
                         "id": item["id"],
-                        "title": item.get("summary", "(sin título)"),
+                        "title": title,
                         "start": start_dt,
                         "end": end_dt,
                         "color": calendar_color,
@@ -114,6 +159,7 @@ class GoogleCalendarService:
                             "event_timezone": event_timezone,
                             "description": item.get("description", ""),
                             "location": item.get("location", ""),
+                            "is_busy": is_busy,
                         },
                     })
 

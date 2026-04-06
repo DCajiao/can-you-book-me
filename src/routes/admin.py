@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, request, jsonify, session
+from flask import Blueprint, redirect, request, jsonify
 
 from security.auth import require_api_key
 from services.gcalendar import GoogleCalendarService
@@ -13,8 +13,7 @@ admin_bp = Blueprint("admin", __name__)
 def setup():
     """Inicia el flujo OAuth2. Usar una sola vez para obtener el refresh token."""
     service = GoogleCalendarService()
-    auth_url, code_verifier = service.get_auth_url()
-    session["oauth_code_verifier"] = code_verifier
+    auth_url = service.get_auth_url()
     return redirect(auth_url)
 
 
@@ -22,12 +21,13 @@ def setup():
 def callback():
     """Recibe el código de Google y lo intercambia por tokens."""
     code = request.args.get("code")
-    if not code:
-        return jsonify({"error": "No authorization code received"}), 400
+    state = request.args.get("state")
 
-    code_verifier = session.pop("oauth_code_verifier", None)
+    if not code or not state:
+        return jsonify({"error": "Parámetros incompletos en el callback"}), 400
+
     service = GoogleCalendarService()
-    tokens = service.exchange_code(code, code_verifier=code_verifier)
+    tokens = service.exchange_code(code, state=state)
 
     refresh_token = tokens.get("refresh_token")
     if refresh_token:

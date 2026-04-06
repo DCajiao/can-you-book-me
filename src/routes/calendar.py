@@ -16,6 +16,12 @@ def get_events():
     if not time_min or not time_max:
         return jsonify({"error": "Se requieren los parámetros start y end"}), 400
 
+    # Google Calendar API requires RFC3339 with timezone offset
+    if not time_min.endswith("Z") and "+" not in time_min:
+        time_min += "Z"
+    if not time_max.endswith("Z") and "+" not in time_max:
+        time_max += "Z"
+
     service = GoogleCalendarService()
     events = service.list_events(time_min=time_min, time_max=time_max)
     return jsonify(events)

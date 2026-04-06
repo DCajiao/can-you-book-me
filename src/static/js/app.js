@@ -1,82 +1,20 @@
 'use strict';
 
+/* ── Timezone ─────────────────────────────────────── */
 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
 document.getElementById('user-tz').textContent = userTimezone;
 
-// ── Modal helpers ────────────────────────────────────────────
-const modal      = document.getElementById('event-modal');
-const backdrop   = document.getElementById('modal-backdrop');
-const closeBtn   = document.getElementById('modal-close');
-
-function openModal(info) {
-  const { event } = info;
-  const props = event.extendedProps;
-  const eventTz = props.event_timezone || 'UTC';
-
-  // Header
-  document.getElementById('modal-dot').style.background = event.backgroundColor || '#4f46e5';
-  document.getElementById('modal-title').textContent = event.title;
-
-  // Calendar name
-  document.getElementById('modal-calendar').textContent = props.calendar_name || '';
-
-  // Time
-  const timeRow = document.getElementById('modal-time-row');
-  const timeEl  = document.getElementById('modal-time');
-  if (event.allDay) {
-    timeEl.textContent = formatDate(event.start, userTimezone);
-  } else {
-    timeEl.textContent = `${formatDateTime(event.start, userTimezone)} – ${formatDateTime(event.end, userTimezone)}`;
-  }
-  timeRow.classList.remove('hidden');
-
-  // Timezone (only if different from user's)
-  const tzRow = document.getElementById('modal-tz-row');
-  const tzEl  = document.getElementById('modal-tz');
-  if (eventTz && eventTz !== userTimezone) {
-    const originalStart = formatDateTime(event.start, eventTz);
-    const originalEnd   = event.end ? formatDateTime(event.end, eventTz) : null;
-    const originalStr   = originalEnd ? `${originalStart} – ${originalEnd}` : originalStart;
-    tzEl.textContent = `Zona original (${eventTz}): ${originalStr}`;
-    tzRow.classList.remove('hidden');
-  } else {
-    tzRow.classList.add('hidden');
-  }
-
-  // Location
-  const locRow = document.getElementById('modal-location-row');
-  const locEl  = document.getElementById('modal-location');
-  if (props.location) {
-    locEl.textContent = props.location;
-    locRow.classList.remove('hidden');
-  } else {
-    locRow.classList.add('hidden');
-  }
-
-  // Description
-  const descRow = document.getElementById('modal-desc-row');
-  const descEl  = document.getElementById('modal-desc');
-  if (props.description) {
-    descEl.textContent = props.description;
-    descRow.classList.remove('hidden');
-  } else {
-    descRow.classList.add('hidden');
-  }
-
-  modal.classList.remove('hidden');
+/* ── Helpers ──────────────────────────────────────── */
+function fmtTime(date, tz) {
+  return new Intl.DateTimeFormat('es', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(date));
 }
 
-function closeModal() {
-  modal.classList.add('hidden');
-}
-
-backdrop.addEventListener('click', closeModal);
-closeBtn.addEventListener('click', closeModal);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-// ── Date formatting ──────────────────────────────────────────
-function formatDateTime(date, tz) {
+function fmtDateTime(date, tz) {
   return new Intl.DateTimeFormat('es', {
     timeZone: tz,
     weekday: 'short',
@@ -84,11 +22,11 @@ function formatDateTime(date, tz) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: false,
   }).format(new Date(date));
 }
 
-function formatDate(date, tz) {
+function fmtDate(date, tz) {
   return new Intl.DateTimeFormat('es', {
     timeZone: tz,
     weekday: 'long',
@@ -98,25 +36,170 @@ function formatDate(date, tz) {
   }).format(new Date(date));
 }
 
-// ── FullCalendar init ────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const calendarEl = document.getElementById('calendar');
+/* ── Modal ────────────────────────────────────────── */
+const modal    = document.getElementById('event-modal');
+const backdrop = document.getElementById('modal-backdrop');
+const closeBtn = document.getElementById('modal-close');
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'timeGridWeek',
+function openModal(info) {
+  const { event } = info;
+  const p = event.extendedProps;
+  const color = event.backgroundColor || '#c9a14a';
+  const eventTz = p.event_timezone || userTimezone;
+
+  document.getElementById('modal-color-bar').style.background = color;
+  document.getElementById('modal-calendar').textContent = p.calendar_name || '';
+  document.getElementById('modal-title').textContent = event.title;
+
+  // Time
+  const timeEl = document.getElementById('modal-time');
+  if (event.allDay) {
+    timeEl.textContent = fmtDate(event.start, userTimezone);
+  } else {
+    const s = fmtDateTime(event.start, userTimezone);
+    const e = event.end ? fmtTime(event.end, userTimezone) : '';
+    timeEl.textContent = e ? `${s} → ${e}` : s;
+  }
+
+  // Original timezone
+  const tzRow = document.getElementById('detail-tz');
+  const tzEl  = document.getElementById('modal-tz');
+  if (eventTz && eventTz !== userTimezone && !p.is_busy) {
+    const s = fmtDateTime(event.start, eventTz);
+    const e = event.end ? fmtTime(event.end, eventTz) : '';
+    tzEl.textContent = `${eventTz}: ${s}${e ? ' → ' + e : ''}`;
+    tzRow.classList.remove('hidden');
+  } else {
+    tzRow.classList.add('hidden');
+  }
+
+  // Location
+  const locRow = document.getElementById('detail-location');
+  const locEl  = document.getElementById('modal-location');
+  if (p.location && !p.is_busy) {
+    locEl.textContent = p.location;
+    locRow.classList.remove('hidden');
+  } else {
+    locRow.classList.add('hidden');
+  }
+
+  // Description
+  const descRow = document.getElementById('detail-desc');
+  const descEl  = document.getElementById('modal-desc');
+  if (p.description && !p.is_busy) {
+    descEl.textContent = p.description;
+    descRow.classList.remove('hidden');
+  } else {
+    descRow.classList.add('hidden');
+  }
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+backdrop.addEventListener('click', closeModal);
+closeBtn.addEventListener('click', closeModal);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Swipe-down to close on mobile
+let touchStartY = 0;
+modal.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+modal.addEventListener('touchend', e => {
+  if (e.changedTouches[0].clientY - touchStartY > 80) closeModal();
+}, { passive: true });
+
+/* ── Custom event chip renderer ──────────────────── */
+function renderEventContent(arg) {
+  const event = arg.event;
+  const p = event.extendedProps;
+  const color = event.backgroundColor || '#c9a14a';
+  const isBusy = p.is_busy;
+  const hasOtherTz = p.event_timezone && p.event_timezone !== userTimezone;
+  const isTimeGrid = arg.view.type.includes('timeGrid');
+
+  const chip = document.createElement('div');
+  chip.className = 'cal-chip';
+  chip.style.setProperty('--chip-color', color);
+
+  // Title
+  const titleEl = document.createElement('span');
+  titleEl.className = 'chip-title' + (isBusy ? ' busy' : '');
+  titleEl.textContent = event.title;
+  chip.appendChild(titleEl);
+
+  // Time row (only in time grid and if not all-day)
+  if (isTimeGrid && !event.allDay && event.start) {
+    const timeEl = document.createElement('span');
+    timeEl.className = 'chip-time';
+    const s = fmtTime(event.start, userTimezone);
+    const e = event.end ? fmtTime(event.end, userTimezone) : '';
+    timeEl.textContent = e ? `${s}–${e}` : s;
+    chip.appendChild(timeEl);
+  }
+
+  // Timezone indicator
+  if (hasOtherTz && !isBusy) {
+    const tzEl = document.createElement('span');
+    tzEl.className = 'chip-tz';
+    tzEl.title = `Zona original: ${p.event_timezone}`;
+    tzEl.textContent = '🌍';
+    chip.appendChild(tzEl);
+  }
+
+  return { domNodes: [chip] };
+}
+
+/* ── Responsive initial view ─────────────────────── */
+function getInitialView() {
+  const w = window.innerWidth;
+  if (w < 480) return 'listWeek';
+  if (w < 768) return 'timeGridDay';
+  return 'timeGridWeek';
+}
+
+function getCalendarHeight() {
+  return window.innerWidth < 640
+    ? 'calc(100dvh - 140px)'
+    : 'calc(100dvh - 200px)';
+}
+
+/* ── FullCalendar ─────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const calEl = document.getElementById('calendar');
+
+  const calendar = new FullCalendar.Calendar(calEl, {
+    initialView: getInitialView(),
     locale: 'es',
     timeZone: userTimezone,
+
     headerToolbar: {
-      left: 'prev,next today',
+      left:   'prev,next today',
       center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay',
+      right:  'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
     },
-    height: 'auto',
+
+    buttonText: {
+      today:    'Hoy',
+      day:      'Día',
+      week:     'Semana',
+      month:    'Mes',
+      list:     'Lista',
+    },
+
+    height: getCalendarHeight(),
     nowIndicator: true,
     navLinks: true,
-    eventDisplay: 'block',
     slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00',
+    slotMaxTime: '23:00:00',
+    allDaySlot: true,
+    slotDuration: '00:30:00',
+    slotLabelInterval: '01:00',
+    eventContent: renderEventContent,
 
     events: async (fetchInfo, successCallback, failureCallback) => {
       try {
@@ -139,21 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
       openModal(info);
     },
 
-    eventDidMount: (info) => {
-      const props = info.event.extendedProps;
-      const eventTz = props.event_timezone;
-
-      if (eventTz && eventTz !== userTimezone) {
-        // Add a small timezone indicator on the event chip
-        const el = info.el.querySelector('.fc-event-title') || info.el;
-        if (!el.querySelector('.tz-indicator')) {
-          const badge = document.createElement('span');
-          badge.className = 'tz-indicator';
-          badge.title = `Zona original: ${eventTz}`;
-          badge.textContent = ' 🌍';
-          badge.style.cssText = 'font-size:0.65rem; opacity:0.8;';
-          el.appendChild(badge);
-        }
+    // Responsive: switch view on resize
+    windowResize: (arg) => {
+      const view = getInitialView();
+      if (arg.view.type !== view) {
+        arg.view.calendar.changeView(view);
       }
     },
   });
