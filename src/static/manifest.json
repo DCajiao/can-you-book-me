@@ -1,7 +1,7 @@
 {
-  "name": "Can You Book Me?",
-  "short_name": "BookMe",
-  "description": "Disponibilidad en tiempo real. Agenda un momento conmigo.",
+  "name": "Can You Book Me? — DCajiao",
+  "short_name": "BookMe · DCajiao",
+  "description": "Agenda un momento con DCajiao. Disponibilidad en tiempo real.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -11,15 +11,15 @@
   "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "/static/icons/icon-192.svg",
+      "src": "/static/icons/download.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/icons/icon-512.svg",
+      "src": "/static/icons/download.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],

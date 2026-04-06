@@ -89,33 +89,34 @@ body {
   text-decoration: none;
 }
 
-.logo-glyph {
-  width: 26px;
-  height: 26px;
-  color: #fff;
-  opacity: 0.9;
+.logo-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.45);
+  object-fit: cover;
   flex-shrink: 0;
+  background: #fff;
 }
 
 .logo-text-wrap {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .logo-main {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.65);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.logo-accent {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+}
+
+.logo-sub {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.04em;
 }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
