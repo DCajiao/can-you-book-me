@@ -1,5 +1,61 @@
 'use strict';
 
+/* ── PWA Install ──────────────────────────────────── */
+(function initInstall() {
+  const btn     = document.getElementById('install-btn');
+  const iosTip  = document.getElementById('ios-install-tip');
+  const tipClose = document.getElementById('ios-tip-close');
+
+  // Already running as installed PWA — hide everything
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  if (isStandalone) return;
+
+  // Only show on mobile screen widths
+  const isMobile = () => window.innerWidth < 900;
+
+  // ── Android / Chrome: use beforeinstallprompt ──
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (isMobile()) btn.classList.remove('hidden');
+  });
+
+  btn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      // Android path
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') btn.classList.add('hidden');
+    } else {
+      // iOS path: toggle instruction tooltip
+      iosTip.classList.toggle('hidden');
+    }
+  });
+
+  // ── iOS Safari: detect and show button manually ──
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+                !window.MSStream;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  if (isIOS && isSafari && isMobile()) {
+    btn.classList.remove('hidden');
+  }
+
+  // Close tip
+  tipClose.addEventListener('click', () => iosTip.classList.add('hidden'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') iosTip.classList.add('hidden');
+  });
+
+  // Hide button if app gets installed later in the session
+  window.addEventListener('appinstalled', () => btn.classList.add('hidden'));
+})();
+
 /* ── Timezone ─────────────────────────────────────── */
 const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 document.getElementById('user-tz').textContent = userTimezone;

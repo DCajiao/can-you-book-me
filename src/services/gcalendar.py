@@ -110,6 +110,16 @@ class GoogleCalendarService:
         credentials = self.get_credentials()
         service = build("calendar", "v3", credentials=credentials)
 
+        # Fetch the event color palette once (colorId → hex)
+        try:
+            color_palette = service.colors().get().execute()
+            event_colors = {
+                cid: data["background"]
+                for cid, data in color_palette.get("event", {}).items()
+            }
+        except HttpError:
+            event_colors = {}
+
         events = []
         for calendar_id in calendar_ids:
             try:
@@ -147,15 +157,20 @@ class GoogleCalendarService:
                     is_busy = not summary
                     title = summary if summary else "Busy"
 
+                    # Use event-level color if set, otherwise fall back to calendar color
+                    color_id = item.get("colorId")
+                    event_color = event_colors.get(color_id, calendar_color) if color_id else calendar_color
+
                     events.append({
                         "id": item["id"],
                         "title": title,
                         "start": start_dt,
                         "end": end_dt,
-                        "color": calendar_color,
+                        "color": event_color,
                         "allDay": "date" in start,
                         "extendedProps": {
                             "calendar_name": calendar_name,
+                            "calendar_color": calendar_color,
                             "event_timezone": event_timezone,
                             "description": item.get("description", ""),
                             "location": item.get("location", ""),
