@@ -2,9 +2,7 @@
 
 /* ── PWA Install ──────────────────────────────────── */
 (function initInstall() {
-  const btn     = document.getElementById('install-btn');
-  const iosTip  = document.getElementById('ios-install-tip');
-  const tipClose = document.getElementById('ios-tip-close');
+  const btn = document.getElementById('install-btn');
 
   // Already running as installed PWA — hide everything
   const isStandalone =
@@ -26,33 +24,33 @@
 
   btn.addEventListener('click', async () => {
     if (deferredPrompt) {
-      // Android path
+      // Android / Chrome: native install prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       deferredPrompt = null;
       if (outcome === 'accepted') btn.classList.add('hidden');
-    } else {
-      // iOS path: toggle instruction tooltip
-      iosTip.classList.toggle('hidden');
+    } else if (navigator.share) {
+      // iOS Safari: open native share sheet directly (closest to automatic)
+      // User lands on the sheet where "Add to Home Screen" is one tap away
+      try {
+        await navigator.share({
+          title: document.title,
+          url: window.location.href,
+        });
+      } catch (_) {
+        // User dismissed — no-op
+      }
     }
   });
 
-  // ── iOS Safari: detect and show button manually ──
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) &&
-                !window.MSStream;
+  // ── iOS Safari: detect and show button ──
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   if (isIOS && isSafari && isMobile()) {
     btn.classList.remove('hidden');
   }
 
-  // Close tip
-  tipClose.addEventListener('click', () => iosTip.classList.add('hidden'));
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') iosTip.classList.add('hidden');
-  });
-
-  // Hide button if app gets installed later in the session
   window.addEventListener('appinstalled', () => btn.classList.add('hidden'));
 })();
 
