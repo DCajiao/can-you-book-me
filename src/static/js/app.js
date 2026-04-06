@@ -2,7 +2,9 @@
 
 /* ── PWA Install ──────────────────────────────────── */
 (function initInstall() {
-  const btn = document.getElementById('install-btn');
+  const btn      = document.getElementById('install-btn');
+  const iosTip   = document.getElementById('ios-install-tip');
+  const tipClose = document.getElementById('ios-tip-close');
 
   // Already running as installed PWA — hide everything
   const isStandalone =
@@ -29,28 +31,24 @@
       const { outcome } = await deferredPrompt.userChoice;
       deferredPrompt = null;
       if (outcome === 'accepted') btn.classList.add('hidden');
-    } else if (navigator.share) {
-      // iOS Safari: open native share sheet directly (closest to automatic)
-      // User lands on the sheet where "Add to Home Screen" is one tap away
-      try {
-        await navigator.share({
-          title: document.title,
-          url: window.location.href,
-        });
-      } catch (_) {
-        // User dismissed — no-op
-      }
+    } else {
+      // iOS: toggle instruction tooltip
+      iosTip.classList.toggle('hidden');
     }
   });
 
   // ── iOS Safari: detect and show button ──
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isIOS    = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   if (isIOS && isSafari && isMobile()) {
     btn.classList.remove('hidden');
   }
 
+  tipClose.addEventListener('click', () => iosTip.classList.add('hidden'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') iosTip.classList.add('hidden');
+  });
   window.addEventListener('appinstalled', () => btn.classList.add('hidden'));
 })();
 
@@ -216,11 +214,6 @@ function getInitialView() {
   return 'timeGridWeek';
 }
 
-function getCalendarHeight() {
-  return window.innerWidth < 640
-    ? 'calc(100dvh - 140px)'
-    : 'calc(100dvh - 200px)';
-}
 
 /* ── FullCalendar ─────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -245,13 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
       list:     'Lista',
     },
 
-    height: getCalendarHeight(),
+    height: 'auto',
     nowIndicator: true,
     navLinks: true,
-    slotMinTime: '06:00:00',
+    slotMinTime: '07:00:00',
     slotMaxTime: '23:00:00',
     allDaySlot: true,
-    slotDuration: '00:30:00',
+    slotDuration: '00:15:00',
     slotLabelInterval: '01:00',
     eventContent: renderEventContent,
 
@@ -271,6 +264,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
+    loading: (isLoading) => {
+      const overlay = document.getElementById('loading-overlay');
+      if (isLoading) {
+        overlay.classList.remove('hidden');
+      } else {
+        overlay.classList.add('hidden');
+      }
+    },
+
     eventClick: (info) => {
       info.jsEvent.preventDefault();
       openModal(info);
@@ -285,5 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   });
 
+  // Show loader before first render so it's visible from the start
+  document.getElementById('loading-overlay').classList.remove('hidden');
   calendar.render();
 });

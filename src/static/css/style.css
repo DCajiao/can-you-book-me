@@ -142,6 +142,70 @@ body {
 .install-btn:active { transform: scale(0.96); }
 .install-btn:hover  { background: var(--blue-light); }
 
+/* iOS install tip tooltip */
+.ios-tip {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  width: min(340px, calc(100vw - 32px));
+  background: #1a1a2e;
+  color: #fff;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  animation: tip-in 0.2s ease;
+}
+.ios-tip.hidden { display: none; }
+
+@keyframes tip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.ios-tip-arrow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 8px;
+  background: #1a1a2e;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.ios-tip-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.ios-tip-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.ios-tip-steps {
+  list-style: decimal;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.4;
+}
+.ios-tip-steps strong { color: #fff; }
+
 
 .tz-badge {
   display: flex;
@@ -175,6 +239,59 @@ body {
 .bg-texture { display: none; }
 
 /* ═══════════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 244, 251, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.loading-overlay.hidden {
+  display: none;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: var(--r-xl);
+  padding: 28px 36px;
+  box-shadow: 0 8px 32px rgba(35, 87, 196, 0.12);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  animation: spin 0.85s linear infinite;
+}
+
+.loading-spinner svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--t2);
+  letter-spacing: 0.01em;
+}
+
+/* ═══════════════════════════════════════════════════
    MAIN / CALENDAR SHELL
 ═══════════════════════════════════════════════════ */
 .main-content {
@@ -190,7 +307,7 @@ body {
   border-radius: var(--r-xl);
   padding: 16px 18px;
   box-shadow: 0 2px 16px rgba(35,87,196,0.07);
-  overflow: hidden;
+  overflow: visible;
   max-width: 100%;
   animation: fade-up 0.35s ease both;
 }
@@ -305,7 +422,7 @@ body {
 }
 
 /* Slots */
-.fc .fc-timegrid-slot         { height: 36px !important; border-color: var(--b1) !important; }
+.fc .fc-timegrid-slot         { height: 20px !important; border-color: var(--b1) !important; }
 .fc .fc-timegrid-slot-minor   { border-top-style: dotted !important; border-color: rgba(35,87,196,0.04) !important; }
 
 .fc .fc-day-today  { background: var(--fc-today-bg-color) !important; }
@@ -340,15 +457,15 @@ body {
   gap: 1px;
   height: 100%;
   padding: 4px 7px;
-  border-left: 3px solid var(--chip-color, var(--blue));
-  background: color-mix(in srgb, var(--chip-color, var(--blue)) 10%, #ffffff);
+  border-left: 3px solid color-mix(in srgb, var(--chip-color, var(--blue)) 85%, #000);
+  background: color-mix(in srgb, var(--chip-color, var(--blue)) 28%, #ffffff);
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   overflow: hidden;
   transition: background 0.12s ease;
 }
 
 .fc .fc-event:hover .cal-chip {
-  background: color-mix(in srgb, var(--chip-color, var(--blue)) 18%, #ffffff);
+  background: color-mix(in srgb, var(--chip-color, var(--blue)) 40%, #ffffff);
 }
 
 .chip-title {
