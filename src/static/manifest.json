@@ -1,7 +1,7 @@
 {
-  "name": "Can You Book Me? — DCajiao",
-  "short_name": "BookMe · DCajiao",
-  "description": "Agenda un momento con DCajiao. Disponibilidad en tiempo real.",
+  "name": "Can You Book Me? — David",
+  "short_name": "Working hours — David",
+  "description": "Agenda un momento con David. Disponibilidad en tiempo real.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
