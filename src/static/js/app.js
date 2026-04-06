@@ -103,13 +103,18 @@ function openModal(info) {
   document.getElementById('modal-calendar').textContent = p.calendar_name || '';
   document.getElementById('modal-title').textContent = event.title;
 
+  // Use startStr/endStr (ISO with offset) so new Date() resolves the real UTC
+  // moment before Intl converts to the target timezone — avoids double-offset.
+  const startDate = new Date(event.startStr);
+  const endDate   = event.endStr ? new Date(event.endStr) : null;
+
   // Time
   const timeEl = document.getElementById('modal-time');
   if (event.allDay) {
-    timeEl.textContent = fmtDate(event.start, userTimezone);
+    timeEl.textContent = fmtDate(startDate, userTimezone);
   } else {
-    const s = fmtDateTime(event.start, userTimezone);
-    const e = event.end ? fmtTime(event.end, userTimezone) : '';
+    const s = fmtDateTime(startDate, userTimezone);
+    const e = endDate ? fmtTime(endDate, userTimezone) : '';
     timeEl.textContent = e ? `${s} → ${e}` : s;
   }
 
@@ -117,8 +122,8 @@ function openModal(info) {
   const tzRow = document.getElementById('detail-tz');
   const tzEl  = document.getElementById('modal-tz');
   if (eventTz && eventTz !== userTimezone && !p.is_busy) {
-    const s = fmtDateTime(event.start, eventTz);
-    const e = event.end ? fmtTime(event.end, eventTz) : '';
+    const s = fmtDateTime(startDate, eventTz);
+    const e = endDate ? fmtTime(endDate, eventTz) : '';
     tzEl.textContent = `${eventTz}: ${s}${e ? ' → ' + e : ''}`;
     tzRow.classList.remove('hidden');
   } else {
@@ -185,11 +190,11 @@ function renderEventContent(arg) {
   chip.appendChild(titleEl);
 
   // Time row (only in time grid and if not all-day)
-  if (isTimeGrid && !event.allDay && event.start) {
+  if (isTimeGrid && !event.allDay && event.startStr) {
     const timeEl = document.createElement('span');
     timeEl.className = 'chip-time';
-    const s = fmtTime(event.start, userTimezone);
-    const e = event.end ? fmtTime(event.end, userTimezone) : '';
+    const s = fmtTime(new Date(event.startStr), userTimezone);
+    const e = event.endStr ? fmtTime(new Date(event.endStr), userTimezone) : '';
     timeEl.textContent = e ? `${s}–${e}` : s;
     chip.appendChild(timeEl);
   }
